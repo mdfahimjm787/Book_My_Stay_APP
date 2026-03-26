@@ -2,85 +2,68 @@ import java.util.*;
 
 // Reservation Class
 class Reservation {
+    String reservationId;
     String guestName;
-    String roomType;
 
-    Reservation(String guestName, String roomType) {
+    Reservation(String reservationId, String guestName) {
+        this.reservationId = reservationId;
         this.guestName = guestName;
-        this.roomType = roomType;
     }
 }
 
-// Inventory Class
-class RoomInventory {
-    private HashMap<String, Integer> inventory = new HashMap<>();
+// Service Class
+class Service {
+    String name;
+    double price;
 
-    public RoomInventory() {
-        inventory.put("Single Room", 2);
-        inventory.put("Double Room", 1);
-        inventory.put("Suite Room", 1);
+    Service(String name, double price) {
+        this.name = name;
+        this.price = price;
+    }
+}
+
+// Add-On Service Manager
+class AddOnServiceManager {
+
+    private Map<String, List<Service>> serviceMap = new HashMap<>();
+
+    // Add service to reservation
+    public void addService(String reservationId, Service service) {
+        serviceMap.putIfAbsent(reservationId, new ArrayList<>());
+        serviceMap.get(reservationId).add(service);
+
+        System.out.println("Service Added: " + service.name + " for " + reservationId);
     }
 
-    public int getAvailability(String type) {
-        return inventory.getOrDefault(type, 0);
-    }
+    // Display services
+    public void displayServices(String reservationId) {
+        System.out.println("\nServices for Reservation: " + reservationId);
 
-    public void reduceAvailability(String type) {
-        inventory.put(type, inventory.get(type) - 1);
-    }
+        List<Service> services = serviceMap.get(reservationId);
 
-    public void display() {
-        System.out.println("\n--- Updated Inventory ---");
-        for (String key : inventory.keySet()) {
-            System.out.println(key + " : " + inventory.get(key));
+        if (services == null) {
+            System.out.println("No services selected");
+            return;
+        }
+
+        for (Service s : services) {
+            System.out.println(s.name + " - ₹" + s.price);
         }
     }
-}
 
-// Booking Service
-class BookingService {
+    // Calculate total cost
+    public double calculateTotal(String reservationId) {
+        double total = 0;
 
-    private Queue<Reservation> queue;
-    private RoomInventory inventory;
+        List<Service> services = serviceMap.get(reservationId);
 
-    private HashMap<String, Set<String>> allocatedRooms = new HashMap<>();
-
-    public BookingService(Queue<Reservation> queue, RoomInventory inventory) {
-        this.queue = queue;
-        this.inventory = inventory;
-    }
-
-    public void processBookings() {
-
-        System.out.println("\n--- Processing Bookings ---");
-
-        while (!queue.isEmpty()) {
-            Reservation r = queue.poll();
-
-            if (inventory.getAvailability(r.roomType) > 0) {
-
-                String roomId = r.roomType.substring(0, 2).toUpperCase()
-                        + new Random().nextInt(1000);
-
-                allocatedRooms.putIfAbsent(r.roomType, new HashSet<>());
-
-                while (allocatedRooms.get(r.roomType).contains(roomId)) {
-                    roomId = r.roomType.substring(0, 2).toUpperCase()
-                            + new Random().nextInt(1000);
-                }
-
-                allocatedRooms.get(r.roomType).add(roomId);
-
-                inventory.reduceAvailability(r.roomType);
-
-                System.out.println("Booking Confirmed: " + r.guestName +
-                        " | Room Type: " + r.roomType +
-                        " | Room ID: " + roomId);
-
-            } else {
-                System.out.println("Booking Failed (No Availability): " + r.guestName);
+        if (services != null) {
+            for (Service s : services) {
+                total += s.price;
             }
         }
+
+        return total;
     }
 }
 
@@ -93,19 +76,23 @@ public class Book_My_Stay_App {
         System.out.println(" Book My Stay App ");
         System.out.println("=======================================");
 
-        Queue<Reservation> queue = new LinkedList<>();
+        // Sample Reservation
+        Reservation r1 = new Reservation("RES101", "Fahim");
 
-        queue.add(new Reservation("Fahim", "Single Room"));
-        queue.add(new Reservation("Arun", "Single Room"));
-        queue.add(new Reservation("Sakthi", "Single Room"));
-        queue.add(new Reservation("John", "Suite Room"));
+        // Service Manager
+        AddOnServiceManager manager = new AddOnServiceManager();
 
-        RoomInventory inventory = new RoomInventory();
+        // Add services
+        manager.addService("RES101", new Service("WiFi", 200));
+        manager.addService("RES101", new Service("Breakfast", 300));
+        manager.addService("RES101", new Service("Airport Pickup", 500));
 
-        BookingService service = new BookingService(queue, inventory);
+        // Display services
+        manager.displayServices("RES101");
 
-        service.processBookings();
+        // Total cost
+        double total = manager.calculateTotal("RES101");
 
-        inventory.display();
+        System.out.println("\nTotal Add-On Cost: ₹" + total);
     }
 }
